@@ -132,4 +132,4 @@ API documentation: [agsi.gie.eu](https://agsi.gie.eu)
 
 **Abdulrahman Mustafa**
 BEng Electrical & Electronic Engineering, University of Surrey
-[GitHub](https://github.com/amr-coding1) | [LinkedIn](https://linkedin.com/in/abdulrahman-mustafa)
+[GitHub](https://github.com/amr-coding1) | [LinkedIn](https://www.linkedin.com/in/abdulrahman-92a7392a0/)

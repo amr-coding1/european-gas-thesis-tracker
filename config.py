@@ -68,6 +68,122 @@ INDICATOR_WEIGHTS = {
     "geopolitical": 1.0,        # Broader Middle East tensions
 }
 
+# === Related Positions (Full Portfolio) ===
+RELATED_POSITIONS = {
+    "TTF": {
+        "ticker": "TTF=F",
+        "name": "TTF Natural Gas Q3-26",
+        "direction": "LONG",
+        "entry_price": 59.34,
+        "entry_date": "2026-03-22",
+        "target_1": 80.00,
+        "target_2": 100.00,
+        "stop_loss": 45.00,
+        "weight": 0.30,
+        "currency": "EUR",
+        "unit": "/MWh",
+        "category": "Gas/LNG",
+    },
+    "LNG": {
+        "ticker": "LNG",
+        "name": "Cheniere Energy",
+        "direction": "LONG",
+        "entry_price": 299.00,
+        "entry_date": "2026-03-28",
+        "target_1": 335.00,
+        "target_2": None,
+        "stop_loss": 265.00,
+        "weight": 0.25,
+        "currency": "USD",
+        "unit": "",
+        "category": "Equities",
+    },
+    "VG": {
+        "ticker": "VG",
+        "name": "Venture Global",
+        "direction": "LONG",
+        "entry_price": 17.50,
+        "entry_date": "2026-03-28",
+        "target_1": 25.00,
+        "target_2": None,
+        "stop_loss": 12.00,
+        "weight": 0.10,
+        "currency": "USD",
+        "unit": "",
+        "category": "Equities",
+    },
+    "EQNR": {
+        "ticker": "EQNR",
+        "name": "Equinor ASA",
+        "direction": "LONG",
+        "entry_price": 41.00,
+        "entry_date": "2026-03-28",
+        "target_1": 50.00,
+        "target_2": None,
+        "stop_loss": 35.00,
+        "weight": 0.10,
+        "currency": "USD",
+        "unit": "",
+        "category": "Equities",
+    },
+    "BRENT": {
+        "ticker": "BZ=F",
+        "name": "Brent Crude Oil",
+        "direction": "LONG",
+        "entry_price": 112.50,
+        "entry_date": "2026-03-28",
+        "target_1": 130.00,
+        "target_2": None,
+        "stop_loss": 95.00,
+        "weight": 0.10,
+        "currency": "USD",
+        "unit": "/bbl",
+        "category": "Oil",
+    },
+    "HH": {
+        "ticker": "NG=F",
+        "name": "Henry Hub Natural Gas",
+        "direction": "SHORT",
+        "entry_price": 2.94,
+        "entry_date": "2026-03-28",
+        "target_1": 2.20,
+        "target_2": None,
+        "stop_loss": 3.50,
+        "weight": 0.05,
+        "currency": "USD",
+        "unit": "/MMBtu",
+        "category": "Gas/LNG",
+    },
+}
+
+UNALLOCATED_WEIGHT = 0.10  # Cash reserve
+
+# === News Search Queries ===
+NEWS_QUERIES = {
+    "Gas/LNG": [
+        "TTF gas price Europe",
+        "Ras Laffan LNG Qatar",
+        "European gas storage injection",
+        "LNG cargo spot market",
+        "Strait of Hormuz shipping",
+    ],
+    "Geopolitical": [
+        "Iran war ceasefire negotiations",
+        "Trump Iran deadline energy",
+        "EU Russian gas ban sanctions",
+        "Middle East escalation oil",
+    ],
+    "Equities": [
+        "Cheniere Energy LNG stock",
+        "Venture Global LNG",
+        "Equinor gas production Norway",
+    ],
+    "Oil": [
+        "Brent crude oil price Hormuz",
+        "OPEC production supply",
+    ],
+}
+
 # === Data Paths ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")

@@ -2,16 +2,18 @@
 
 A live, dynamically-updating trading thesis and monitoring system tracking the European natural gas supply crisis following the destruction of Qatar's Ras Laffan LNG infrastructure.
 
-**Thesis:** Long TTF Summer 2026 — Iran's strikes on Ras Laffan destroyed 12.8 mtpa of Qatari LNG capacity for 3-5 years. European gas storage is critically low entering injection season. The refill math does not work — TTF must reprice higher.
+**Thesis:** Long TTF Summer 2026 — Iran's strikes on Ras Laffan destroyed 12.8 mtpa of Qatari LNG capacity for 3-5 years. European gas storage is critically low entering injection season. The refill maths simply do not work — TTF must reprice higher.
 
 ## What This Does
 
 - Pulls **live European gas storage data** from the AGSI API (Gas Infrastructure Europe) for 7 countries
 - Scores the thesis against **8 weighted bull/bear indicators** on a 0-100 scale
-- Calculates the **refill math** — required injection rate vs current rate at various EU mandate targets
+- Calculates the **refill maths** — required injection rate vs current rate at various EU mandate targets
 - Tracks **Netherlands days-to-empty** (where TTF is priced)
 - Generates **30-day storage trend charts** and country-by-country heatmaps
-- Includes a **paper trade tracker** with live P&L from Yahoo Finance
+- Monitors a **6-position cross-asset portfolio** with live P&L, correlation analysis, and allocation tracking
+- Fetches **live news headlines** from Google News RSS, grouped by thesis-relevant categories
+- Includes a full **thought process and scenario analysis** section documenting the reasoning behind each position
 - Runs as a **Jupyter notebook** (interactive, visual) or **CLI tool** (automated, scriptable)
 
 ## The Thesis
@@ -20,15 +22,15 @@ A live, dynamically-updating trading thesis and monitoring system tracking the E
 
 Europe imports the majority of its natural gas. After cutting Russian pipeline gas in 2022, Europe became heavily dependent on LNG — particularly from Qatar (the world's largest LNG exporter) and the US.
 
-On 18-19 March 2026, Iranian missile strikes destroyed **Trains 4 and 6** at Qatar's Ras Laffan Industrial City — the single largest LNG complex on Earth. This removed **12.8 million tonnes per annum** of LNG capacity, approximately 17% of Qatar's output, for an estimated 3-5 years.
+On 18-19 March 2026, Iranian missile strikes destroyed **Trains 4 and 6** at Qatar's Ras Laffan Industrial City — the single largest LNG complex on Earth. This removed **12.8 million tonnes per annum** of LNG capacity, roughly 17% of Qatar's output, for an estimated 3-5 years.
 
 Simultaneously, Iran imposed a **selective blockade of the Strait of Hormuz**, further constraining all Gulf LNG exports to Western buyers.
 
 ### The Problem
 
-EU gas storage sits at approximately **28.5%** capacity. The EU has a legal mandate to fill storage to at least 80-90% by December 1 (with flexibility down to 70%). Injection season — when Europe refills its underground storage — starts in April.
+EU gas storage sits at approximately **28.5%** capacity. The EU has a legal mandate to fill storage to at least 80-90% by December 1 (with flexibility down to 70%). Injection season — when Europe refills its underground storage — begins in April.
 
-The math:
+The maths:
 
 | Target | TWh Needed | Required Injection (GWh/d) | Current Rate (GWh/d) | Gap |
 |--------|-----------|---------------------------|---------------------|-----|
@@ -40,7 +42,7 @@ Even at the loosest possible target, Europe needs to inject at **2-3x its curren
 
 ### Bull Case
 
-1. **Refill math is broken** at every mandate level
+1. **Refill maths are broken** at every mandate level
 2. **Netherlands (where TTF is priced) at ~7%** — roughly 30-40 days of storage remaining
 3. **No swing supplier** — Norway maxed, Russia banned, US at capacity, Qatar destroyed/blocked
 4. **EU banned Russian gas permanently** (January 2026 regulation) — the #1 bear risk is now legislation
@@ -52,20 +54,25 @@ Even at the loosest possible target, Europe needs to inject at **2-3x its curren
 
 1. **Ceasefire / Hormuz reopening** — US aerial campaign could succeed
 2. **EU drops storage mandate** — already lowered recommendation to 80%, floor at 70%
-3. **Demand destruction** — at €80-100/MWh European industry shuts down, reducing demand
+3. **Demand destruction** — at EUR 80-100/MWh European industry shuts down, reducing demand
 4. **US LNG capacity additions** — Golden Pass, Plaquemines ramping through 2026
 5. **Mild summer** — less cooling demand = less gas burn = easier refill
 6. **Russian LNG shadow flows** — dark fleet/STS transfers larger than reported
 
-### The Trade
+### The Portfolio
 
-- **Instrument:** TTF Natural Gas Futures, Q3-2026
-- **Direction:** Long
-- **Paper Trade Entry:** €59.34/MWh (22 March 2026)
-- **Target 1:** €80/MWh (take half off)
-- **Target 2:** €100/MWh (close remainder)
-- **Stop Loss:** €45/MWh (pre-strike level — thesis is wrong)
-- **Timeframe:** 3-6 months
+The thesis is expressed through a cross-asset portfolio, not just a single TTF position:
+
+| Position | Direction | Entry | Target | Stop | Weight | Rationale |
+|----------|-----------|-------|--------|------|--------|-----------|
+| TTF Q3-26 | Long | EUR 59.34 | EUR 80 / 100 | EUR 45 | 30% | Core thesis — EU refill maths |
+| Cheniere (LNG) | Long | $299 | $335 | $265 | 25% | US LNG producer; profits from HH-TTF spread |
+| Venture Global (VG) | Long | $17.50 | $25 | $12 | 10% | Higher-beta LNG play; 30% spot exposure |
+| Equinor (EQNR) | Long | $41 | $50 | $35 | 10% | Europe's top pipeline gas supplier; pure price play |
+| Brent Crude (BZ=F) | Long | $112.50 | $130 | $95 | 10% | Hormuz closure; geopolitical risk premium |
+| Henry Hub (NG=F) | Short | $2.94 | $2.20 | $3.50 | 5% | Hedge — US gas decoupled from global crisis |
+
+10% held as cash reserve. All positions entered as paper trades on TradingView.
 
 ## Project Structure
 
@@ -73,9 +80,10 @@ Even at the loosest possible target, Europe needs to inject at **2-3x its curren
 thesis-tracker/
 ├── European_Gas_Thesis.ipynb   # Interactive notebook — the main deliverable
 ├── run_tracker.py              # CLI tool for automated monitoring
-├── config.py                   # API keys, country definitions, thesis parameters
+├── config.py                   # API keys, positions, thesis parameters, scoring weights
 ├── data_pipeline.py            # AGSI API client with retry/rate-limiting
 ├── thesis_scorer.py            # 8-indicator weighted scoring framework
+├── news_fetcher.py             # Google News RSS fetcher for live headlines
 ├── requirements.txt            # Python dependencies
 ├── data/                       # Historical snapshots (gitignored)
 │   ├── storage_history.csv
@@ -83,6 +91,24 @@ thesis-tracker/
 │   └── manual_inputs.json
 └── reports/                    # Saved daily reports (gitignored)
 ```
+
+## Notebook Sections
+
+| # | Section | Description |
+|---|---------|-------------|
+| 1 | Live European Gas Storage | Current storage levels for 7 countries with weekly deltas |
+| 2 | The Refill Maths | Required injection rates at 90/80/75/70% targets vs current pace |
+| 3 | 30-Day EU Storage Trend | Line charts showing EU and NL storage trajectories |
+| 4 | Thesis Health Score | 8-indicator weighted composite score (0-100) with breakdown |
+| 5 | Supply Picture | Visual breakdown of European gas supply sources and the Qatar gap |
+| 6 | Country-by-Country Heatmap | Storage levels with critical threshold markers |
+| 7 | Paper Trade Tracker | Live TTF P&L from Yahoo Finance |
+| 8 | Related Positions & Portfolio | Full 6-position portfolio with live P&L, correlation heatmap, allocation chart |
+| 9 | Bull / Bear Catalyst Tracker | Status of each bull catalyst and bear risk |
+| 10 | Thought Process & Scenario Analysis | Thesis narrative, key developments, 4 scenarios with probabilities, hedge logic |
+| 11 | Trade Journal | Dated entries with storage levels, scores, and actions |
+| 12 | Live News & Intelligence Feed | Google News RSS headlines grouped by category (last 48 hours) |
+| 13 | Exit Criteria | Defined take-profit, stop-loss, and review triggers |
 
 ## Quick Start
 
@@ -92,7 +118,7 @@ pip install -r requirements.txt
 
 # Run the notebook (interactive, visual)
 jupyter notebook European_Gas_Thesis.ipynb
-# Then: Kernel → Restart & Run All
+# Then: Kernel -> Restart & Run All
 
 # Or run the CLI tracker
 python3 run_tracker.py              # Single report
@@ -122,11 +148,11 @@ The thesis is scored on 8 weighted indicators, each ranging from -2 (very bearis
 
 Scores are normalised to 0-100 where 50 = neutral, 100 = max bullish, 0 = max bearish.
 
-## Data Source
+## Data Sources
 
-All storage data is sourced from the **AGSI Transparency Platform** operated by Gas Infrastructure Europe (GIE). Data represents status at 6AM CET, published daily at 19:30 CET with a second processing at 23:00 CET.
-
-API documentation: [agsi.gie.eu](https://agsi.gie.eu)
+- **AGSI Transparency Platform** (Gas Infrastructure Europe) — daily storage levels, published at 19:30 CET. API docs: [agsi.gie.eu](https://agsi.gie.eu)
+- **Yahoo Finance** (via yfinance) — live prices for TTF, Cheniere, Venture Global, Equinor, Brent, Henry Hub
+- **Google News RSS** — live headlines filtered by thesis-relevant search queries
 
 ## Author
 

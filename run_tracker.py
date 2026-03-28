@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-European Gas Thesis Tracker — Main Runner
+European Gas Thesis Tracker — CLI Runner.
 
-Pulls live AGSI data, scores the thesis, and generates a report.
+Pulls live AGSI data, scores the thesis against 8 indicators,
+and generates a formatted report. Supports continuous monitoring,
+historical lookback, and manual input updates.
 
 Usage:
     python3 run_tracker.py                  # Full report to terminal
     python3 run_tracker.py --save           # Also save report to file
-    python3 run_tracker.py --json           # Output JSON for programmatic use
+    python3 run_tracker.py --json           # JSON output for programmatic use
     python3 run_tracker.py --history 30     # Pull 30 days of EU storage history
     python3 run_tracker.py --watch          # Live monitor — refreshes every 2 hours
     python3 run_tracker.py --watch 30       # Live monitor — refreshes every 30 minutes

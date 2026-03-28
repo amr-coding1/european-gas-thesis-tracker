@@ -1,6 +1,8 @@
 """
-Thesis Health Scorer — evaluates the bull/bear balance of the thesis
-based on live data and manual inputs.
+Thesis Health Scorer for the European Gas Thesis Tracker.
+Evaluates the bull/bear balance across 8 weighted indicators using
+a combination of live AGSI data and manual inputs (geopolitical level,
+TTF curve shape, etc.). Outputs a normalised 0-100 composite score.
 """
 
 import csv
@@ -16,11 +18,11 @@ log = logging.getLogger(__name__)
 # ─── Manual Inputs Manager ─────────────────────────────────────
 
 DEFAULT_MANUAL_INPUTS = {
-    "trains_offline_mtpa": 12.8,    # Qatar Trains 4 & 6 destroyed
-    "hormuz_open": True,            # Strait of Hormuz currently open
-    "geopolitical": "tensions",     # de-escalation / ceasefire / stable / tensions / escalation
-    "ttf_front_month_score": 1,     # -2 to +2 (manual: check ICE TTF)
-    "ttf_curve_shape_score": 1,     # -2 to +2 (backwardation=bull, contango=bear)
+    "trains_offline_mtpa": 12.8,    # Qatar Trains 4 & 6 — destroyed March 2026
+    "hormuz_open": True,            # Strait of Hormuz — selective blockade since March 2026
+    "geopolitical": "tensions",     # One of: de-escalation / ceasefire / stable / tensions / escalation
+    "ttf_front_month_score": 1,     # -2 to +2 (manual — check ICE TTF or TradingView)
+    "ttf_curve_shape_score": 1,     # -2 to +2 (backwardation = bull, contango = bear)
 }
 
 
@@ -183,7 +185,7 @@ def score_geopolitical(escalation_level: str) -> int:
 def compute_thesis_health(indicators: dict) -> dict:
     """
     Compute weighted thesis health score.
-    Returns score 0-100 where 50=neutral, 100=max bullish, 0=max bearish.
+    Returns a normalised score 0-100 where 50 = neutral, 100 = max bullish, 0 = max bearish.
     """
     weighted_sum = 0
     details = {}
@@ -196,7 +198,7 @@ def compute_thesis_health(indicators: dict) -> dict:
         weighted_sum += weighted
         details[key] = {"raw": raw, "weight": weight, "weighted": round(weighted, 2)}
 
-    # Normalize: max_possible is if every indicator is +2
+    # Normalise: max_possible is if every indicator scores +2
     max_possible = sum(w * 2 for w in INDICATOR_WEIGHTS.values())
     # Map weighted_sum from [-max_possible, +max_possible] to [0, 100]
     normalized = ((weighted_sum / max_possible) + 1) * 50

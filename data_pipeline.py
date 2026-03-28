@@ -1,6 +1,7 @@
 """
-Data pipeline — pulls live data from AGSI API and other sources.
-Handles retries, rate limiting, and robust error handling.
+Data pipeline for the European Gas Thesis Tracker.
+Pulls live storage data from the AGSI API (Gas Infrastructure Europe)
+with retry logic, rate limiting, and CSV persistence for historical tracking.
 """
 
 import requests
@@ -31,7 +32,7 @@ def safe_float(val) -> float | None:
 
 
 def _parse_api_response(data) -> dict | None:
-    """Normalize the various AGSI response shapes into a single dict."""
+    """Normalise the various AGSI response shapes into a single dict."""
     if isinstance(data, list):
         return data[0] if len(data) > 0 else None
     if isinstance(data, dict):
@@ -104,7 +105,7 @@ def fetch_agsi_country(country_code: str, date: str = None, retries: int = 2) ->
 
 
 def _extract_storage_record(code: str, data: dict) -> dict:
-    """Extract a standardized storage record from raw API data."""
+    """Extract a standardised storage record from raw API data."""
     return {
         "name": TRACKED_COUNTRIES[code]["name"],
         "full_pct": safe_float(data.get("full")),
@@ -119,7 +120,7 @@ def _extract_storage_record(code: str, data: dict) -> dict:
 
 
 def fetch_all_storage(date: str = None) -> dict:
-    """Fetch storage data for all tracked countries. Adds 0.5s delay between calls to be polite."""
+    """Fetch storage data for all tracked countries. 0.5s delay between calls for rate limiting."""
     results = {}
     for i, code in enumerate(TRACKED_COUNTRIES):
         if i > 0:
@@ -156,7 +157,7 @@ def fetch_week_ago_storage(country_code: str = "EU") -> dict | None:
 
 
 def fetch_storage_range(country_code: str, days_back: int = 30) -> list[dict]:
-    """Fetch historical storage data for trend analysis. Uses date range to minimize calls."""
+    """Fetch historical storage data for trend analysis. Iterates day-by-day with rate limiting."""
     results = []
     today = datetime.now()
     for i in range(days_back):

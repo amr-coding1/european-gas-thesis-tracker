@@ -1,5 +1,7 @@
 """
-Configuration for the European Gas Thesis Tracker
+Configuration for the European Gas Thesis Tracker.
+Central hub for API keys, tracked countries, thesis parameters,
+portfolio positions, scoring weights, and news queries.
 """
 
 import os
@@ -11,7 +13,7 @@ AGSI_API_KEY = os.environ.get("AGSI_API_KEY", "YOUR_API_KEY_HERE")  # Get free k
 AGSI_BASE_URL = "https://agsi.gie.eu/api"
 AGSI_HEADERS = {"x-key": AGSI_API_KEY}
 
-# Countries to track (ISO 2-letter codes)
+# Tracked countries (ISO 2-letter codes) with critical storage thresholds
 TRACKED_COUNTRIES = {
     "EU": {"name": "EU Aggregate", "param": {"type": "eu"}, "critical_threshold": 30},
     "NL": {"name": "Netherlands (TTF)", "param": {"country": "NL"}, "critical_threshold": 15},
@@ -58,14 +60,14 @@ THESIS = {
 # === Scoring Weights ===
 # Each indicator scores -2 (very bearish) to +2 (very bullish)
 INDICATOR_WEIGHTS = {
-    "storage_level": 2.0,       # Most important — core of thesis
-    "storage_trajectory": 1.5,  # Is it filling/draining vs seasonal norm?
-    "nl_storage": 1.5,          # Netherlands specifically (TTF pricing)
-    "injection_rate": 1.5,      # Injection vs historical average
+    "storage_level": 2.0,       # Core of thesis — aggregate EU fill level
+    "storage_trajectory": 1.5,  # Filling or draining vs seasonal norm
+    "nl_storage": 1.5,          # Netherlands specifically (TTF pricing location)
+    "injection_rate": 1.5,      # Current injection pace vs what's needed for mandate
     "ttf_front_month": 1.0,     # Price confirming thesis direction
-    "ttf_curve_shape": 1.0,     # Backwardation = bullish, contango = bearish
-    "lng_disruption": 2.0,      # Qatar/Hormuz status
-    "geopolitical": 1.0,        # Broader Middle East tensions
+    "ttf_curve_shape": 1.0,     # Backwardation (bullish) vs contango (bearish)
+    "lng_disruption": 2.0,      # Qatar offline capacity + Hormuz status
+    "geopolitical": 1.0,        # Broader Middle East escalation level
 }
 
 # === Related Positions (Full Portfolio) ===
@@ -156,7 +158,7 @@ RELATED_POSITIONS = {
     },
 }
 
-UNALLOCATED_WEIGHT = 0.10  # Cash reserve
+UNALLOCATED_WEIGHT = 0.10  # Cash reserve — 10% held back
 
 # === News Search Queries ===
 NEWS_QUERIES = {

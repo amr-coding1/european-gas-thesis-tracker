@@ -1,6 +1,8 @@
 """
 Live news fetcher for the European Gas Thesis Tracker.
-Pulls headlines from Google News RSS feeds grouped by thesis-relevant categories.
+Pulls headlines from Google News RSS feeds, grouped by thesis-relevant
+categories (Gas/LNG, Geopolitical, Equities, Oil). Deduplicates and
+filters to the last 48 hours by default.
 """
 
 import time
@@ -100,7 +102,7 @@ def categorize_and_deduplicate(df, hours=48):
     if df.empty:
         return df
 
-    # Deduplicate by normalised title
+    # Deduplicate by normalised headline
     df["title_norm"] = df["title"].str.lower().str.strip()
     df = df.drop_duplicates(subset="title_norm", keep="first")
     df = df.drop(columns=["title_norm"])

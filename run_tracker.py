@@ -411,13 +411,16 @@ def run_journal():
     today = datetime.now().strftime("%Y-%m-%d")
 
     # Check for duplicate entry
-    if os.path.exists(TRADE_JOURNAL_CSV):
-        import pandas as pd
-        existing = pd.read_csv(TRADE_JOURNAL_CSV)
-        if today in existing["date"].values:
-            print(f"\n  ⚠️  Journal entry for {today} already exists.")
-            print(f"  To add another entry, wait until tomorrow or edit data/trade_journal.csv directly.\n")
-            return
+    if os.path.exists(TRADE_JOURNAL_CSV) and os.path.getsize(TRADE_JOURNAL_CSV) > 0:
+        try:
+            import pandas as pd
+            existing = pd.read_csv(TRADE_JOURNAL_CSV)
+            if not existing.empty and today in existing["date"].values:
+                print(f"\n  ⚠️  Journal entry for {today} already exists.")
+                print(f"  To add another entry, wait until tomorrow or edit data/trade_journal.csv directly.\n")
+                return
+        except Exception:
+            pass  # Corrupted CSV — will be overwritten with fresh header
 
     print("\n📓 Trade Journal — Weekly Entry\n")
     print("  Fetching live data...\n")

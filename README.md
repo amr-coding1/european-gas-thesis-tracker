@@ -85,9 +85,10 @@ thesis-tracker/
 ├── thesis_scorer.py            # 8-indicator weighted scoring framework
 ├── news_fetcher.py             # Google News RSS fetcher for live headlines
 ├── requirements.txt            # Python dependencies
-├── data/                       # Historical snapshots (gitignored)
+├── data/                       # Historical snapshots (gitignored, except journal)
 │   ├── storage_history.csv
 │   ├── thesis_scores.csv
+│   ├── trade_journal.csv       # Version-controlled — weekly journal entries
 │   └── manual_inputs.json
 └── reports/                    # Saved daily reports (gitignored)
 ```
@@ -106,9 +107,10 @@ thesis-tracker/
 | 8 | Related Positions & Portfolio | Full 6-position portfolio with live P&L, correlation heatmap, allocation chart |
 | 9 | Bull / Bear Catalyst Tracker | Status of each bull catalyst and bear risk |
 | 10 | Thought Process & Scenario Analysis | Thesis narrative, key developments, 4 scenarios with probabilities, hedge logic |
-| 11 | Trade Journal | Dated entries with storage levels, scores, and actions |
+| 11 | Trade Journal | CSV-backed weekly journal — auto-fills data, manual reflections (decision, psychology, Seykota check) |
 | 12 | Live News & Intelligence Feed | Google News RSS headlines grouped by category (last 48 hours) |
 | 13 | Exit Criteria | Defined take-profit, stop-loss, and review triggers |
+| 14 | Risk Management Framework | Market Wizards-inspired: circuit breakers, drawdown protocol, pre-committed crisis responses, correlation check |
 
 ## Quick Start
 
@@ -123,6 +125,7 @@ jupyter notebook European_Gas_Thesis.ipynb
 # Or run the CLI tracker
 python3 run_tracker.py              # Single report
 python3 run_tracker.py --save       # Save report to file
+python3 run_tracker.py --journal    # Add weekly journal entry (auto-fills data, prompts for reflections)
 python3 run_tracker.py --json       # JSON output
 python3 run_tracker.py --history 30 # 30-day EU storage history
 python3 run_tracker.py --watch 120  # Live monitor, refresh every 2 hours

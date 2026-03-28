@@ -5,6 +5,16 @@ portfolio positions, scoring weights, and news queries.
 """
 
 import os
+from pathlib import Path
+
+# === Load .env file if present ===
+_env_path = Path(__file__).parent / ".env"
+if _env_path.exists():
+    for _line in _env_path.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _v = _line.split("=", 1)
+            os.environ.setdefault(_k.strip(), _v.strip())
 
 # === API Keys (env var override supported) ===
 AGSI_API_KEY = os.environ.get("AGSI_API_KEY", "YOUR_API_KEY_HERE")  # Get free key at https://agsi.gie.eu

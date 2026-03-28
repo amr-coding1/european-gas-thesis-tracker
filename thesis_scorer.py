@@ -234,11 +234,12 @@ def log_score(result: dict):
         with open(THESIS_LOG, "a", newline="") as f:
             writer = csv.writer(f)
             if not file_exists:
-                writer.writerow(["timestamp", "score", "signal", "weighted_sum"])
+                writer.writerow(["timestamp", "score", "signal", "emoji", "weighted_sum"])
             writer.writerow([
                 result["timestamp"],
                 result["score"],
                 result["signal"],
+                result["emoji"],
                 result["weighted_sum"],
             ])
     except OSError as e:

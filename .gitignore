@@ -3,6 +3,8 @@ __pycache__/
 .env
 data/watch.pid
 data/*.csv
+!data/trade_journal.csv
 .ipynb_checkpoints/
 reports/
 data/manual_inputs.json
+.DS_Store

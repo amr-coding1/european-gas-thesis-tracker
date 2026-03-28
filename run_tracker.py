@@ -28,6 +28,8 @@ from datetime import datetime
 from config import (
     THESIS, TRACKED_COUNTRIES, REPORTS_DIR, DATA_DIR,
     STORAGE_MANDATE_PCT, STORAGE_MANDATE_DEADLINE_MONTH, STORAGE_MANDATE_DEADLINE_DAY,
+    RELATED_POSITIONS, CIRCUIT_BREAKER_THRESHOLDS, TRADE_JOURNAL_CSV,
+    VALID_GEO_LEVELS,
 )
 from data_pipeline import (
     fetch_all_storage, save_snapshot, fetch_storage_range,
@@ -67,8 +69,6 @@ def run_report(save_to_file: bool = False, output_json: bool = False, quiet: boo
     eu_pct = eu.get("full_pct")
     nl_pct = nl.get("full_pct")
     injection = eu.get("injection_gwh")
-    month = datetime.now().month
-    is_injection_season = 4 <= month <= 10
 
     # Fetch previous data for trajectory scoring
     if not quiet:
@@ -79,19 +79,7 @@ def run_report(save_to_file: bool = False, output_json: bool = False, quiet: boo
     prev_eu_pct = prev_eu.get("full_pct") if prev_eu else None
 
     # Score each indicator
-    indicators = {
-        "storage_level": score_storage_level(eu_pct),
-        "storage_trajectory": score_storage_trajectory(eu_pct, prev_eu_pct, is_injection_season),
-        "nl_storage": score_nl_storage(nl_pct),
-        "injection_rate": score_injection_rate(injection, month),
-        "ttf_front_month": int(manual.get("ttf_front_month_score", 0)),
-        "ttf_curve_shape": int(manual.get("ttf_curve_shape_score", 0)),
-        "lng_disruption": score_lng_disruption(
-            float(manual.get("trains_offline_mtpa", 0)),
-            bool(manual.get("hormuz_open", True))
-        ),
-        "geopolitical": score_geopolitical(str(manual.get("geopolitical", "stable"))),
-    }
+    indicators = build_indicators(storage_data, prev_eu_pct, manual)
 
     # Compute health score
     result = compute_thesis_health(indicators)
@@ -323,6 +311,10 @@ def handle_updates(updates: list[str]):
             except ValueError:
                 print(f"  ⚠️  Invalid integer for {key}: '{value}'")
                 continue
+        elif key == "geopolitical":
+            if value not in VALID_GEO_LEVELS:
+                print(f"  ⚠️  Invalid geopolitical level: '{value}'. Valid: {VALID_GEO_LEVELS}")
+                continue
 
         update_manual_input(key, value)
         print(f"  ✅ {key} = {value}")
@@ -332,6 +324,194 @@ def handle_updates(updates: list[str]):
     print(f"\n  Current manual inputs:")
     for k, v in inputs.items():
         print(f"    {k}: {v}")
+
+
+# ─── Portfolio P&L ────────────────────────────────────────────
+
+def calculate_portfolio_pnl() -> dict:
+    """Calculate live portfolio P&L across all related positions."""
+    import yfinance as yf
+
+    positions_pnl = {}
+    total_weighted_pnl = 0
+
+    for key, pos in RELATED_POSITIONS.items():
+        try:
+            t = yf.Ticker(pos["ticker"])
+            h = t.history(period="5d")
+            current = h['Close'].iloc[-1] if not h.empty else pos["entry_price"]
+        except Exception:
+            current = pos["entry_price"]
+
+        if pos["direction"] == "LONG":
+            pnl_pct = ((current - pos["entry_price"]) / pos["entry_price"]) * 100
+        else:
+            pnl_pct = ((pos["entry_price"] - current) / pos["entry_price"]) * 100
+
+        weighted = pnl_pct * pos["weight"]
+        total_weighted_pnl += weighted
+        positions_pnl[key] = round(pnl_pct, 1)
+
+    # Circuit breaker status
+    if total_weighted_pnl <= CIRCUIT_BREAKER_THRESHOLDS["red"]:
+        cb_status = "RED"
+    elif total_weighted_pnl <= CIRCUIT_BREAKER_THRESHOLDS["orange"]:
+        cb_status = "ORANGE"
+    elif total_weighted_pnl <= CIRCUIT_BREAKER_THRESHOLDS["yellow"]:
+        cb_status = "YELLOW"
+    else:
+        cb_status = "GREEN"
+
+    # Build summary string
+    summary = " | ".join(f"{k}:{v:+.1f}%" for k, v in positions_pnl.items())
+
+    return {
+        "total_weighted_pnl": round(total_weighted_pnl, 2),
+        "positions_pnl": positions_pnl,
+        "positions_summary": summary,
+        "circuit_breaker": cb_status,
+    }
+
+
+def build_indicators(storage_data: dict, prev_eu_pct: float | None, manual: dict) -> dict:
+    """Build the 8-indicator dict from storage data and manual inputs."""
+    eu = storage_data.get("EU", {})
+    nl = storage_data.get("NL", {})
+    eu_pct = eu.get("full_pct")
+    nl_pct = nl.get("full_pct")
+    injection = eu.get("injection_gwh")
+    month = datetime.now().month
+    is_injection_season = 4 <= month <= 10
+
+    return {
+        "storage_level": score_storage_level(eu_pct),
+        "storage_trajectory": score_storage_trajectory(eu_pct, prev_eu_pct, is_injection_season),
+        "nl_storage": score_nl_storage(nl_pct),
+        "injection_rate": score_injection_rate(injection, month),
+        "ttf_front_month": int(manual.get("ttf_front_month_score", 0)),
+        "ttf_curve_shape": int(manual.get("ttf_curve_shape_score", 0)),
+        "lng_disruption": score_lng_disruption(
+            float(manual.get("trains_offline_mtpa", 0)),
+            bool(manual.get("hormuz_open", True))
+        ),
+        "geopolitical": score_geopolitical(str(manual.get("geopolitical", "stable"))),
+    }
+
+
+# ─── Trade Journal ────────────────────────────────────────────
+
+def run_journal():
+    """
+    Add a weekly journal entry. Auto-populates data columns from live
+    sources, then prompts for manual reflection fields.
+    """
+    import csv
+    import yfinance as yf
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    # Check for duplicate entry
+    if os.path.exists(TRADE_JOURNAL_CSV):
+        import pandas as pd
+        existing = pd.read_csv(TRADE_JOURNAL_CSV)
+        if today in existing["date"].values:
+            print(f"\n  ⚠️  Journal entry for {today} already exists.")
+            print(f"  To add another entry, wait until tomorrow or edit data/trade_journal.csv directly.\n")
+            return
+
+    print("\n📓 Trade Journal — Weekly Entry\n")
+    print("  Fetching live data...\n")
+
+    # 1. Fetch AGSI storage data
+    storage_data = fetch_all_storage()
+    eu_pct = None
+    nl_pct = None
+    if storage_data:
+        save_snapshot(storage_data)
+        eu_pct = storage_data.get("EU", {}).get("full_pct")
+        nl_pct = storage_data.get("NL", {}).get("full_pct")
+
+    # 2. Fetch TTF price
+    ttf_price = None
+    try:
+        t = yf.Ticker("TTF=F")
+        h = t.history(period="5d")
+        if not h.empty:
+            ttf_price = round(h['Close'].iloc[-1], 2)
+    except Exception:
+        pass
+
+    # 3. Compute thesis score
+    thesis_score = None
+    manual = load_manual_inputs()
+    if storage_data:
+        prev_eu = fetch_week_ago_storage("EU")
+        prev_eu_pct = prev_eu.get("full_pct") if prev_eu else None
+        indicators = build_indicators(storage_data, prev_eu_pct, manual)
+        result = compute_thesis_health(indicators)
+        log_score(result)
+        thesis_score = result["score"]
+
+    # 4. Calculate portfolio P&L
+    print("  Calculating portfolio P&L...\n")
+    portfolio = calculate_portfolio_pnl()
+
+    # Print auto-filled data
+    print(f"  ── Auto-filled data ──")
+    print(f"  Date:            {today}")
+    print(f"  TTF Price:       {'EUR ' + str(ttf_price) if ttf_price else 'N/A'}")
+    print(f"  EU Storage:      {eu_pct:.2f}%" if eu_pct else "  EU Storage:      N/A")
+    print(f"  NL Storage:      {nl_pct:.2f}%" if nl_pct else "  NL Storage:      N/A")
+    print(f"  Thesis Score:    {thesis_score}" if thesis_score else "  Thesis Score:    N/A")
+    print(f"  Portfolio P&L:   {portfolio['total_weighted_pnl']:+.2f}%")
+    print(f"  Circuit Breaker: {portfolio['circuit_breaker']}")
+    print(f"  Positions:       {portfolio['positions_summary']}")
+    print()
+
+    # 5. Prompt for manual fields (skip if not interactive)
+    decision = ""
+    psychology = ""
+    seykota_check = ""
+
+    if sys.stdin.isatty():
+        print("  ── Manual reflection (press Enter to skip) ──")
+        decision = input("  Decision (what you did and why): ").strip()
+        psychology = input("  Psychology (how you felt, temptations): ").strip()
+        seykota_check = input("  Seykota check (trend? risk? would I enter today?): ").strip()
+    else:
+        print("  (Non-interactive mode — skipping manual prompts)")
+
+    # 6. Write to CSV
+    fieldnames = [
+        "date", "ttf_price", "eu_storage_pct", "nl_storage_pct",
+        "thesis_score", "portfolio_pnl", "circuit_breaker",
+        "positions_summary", "decision", "psychology", "seykota_check",
+    ]
+
+    file_exists = os.path.exists(TRADE_JOURNAL_CSV)
+    try:
+        with open(TRADE_JOURNAL_CSV, "a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow({
+                "date": today,
+                "ttf_price": ttf_price,
+                "eu_storage_pct": round(eu_pct, 2) if eu_pct else None,
+                "nl_storage_pct": round(nl_pct, 2) if nl_pct else None,
+                "thesis_score": thesis_score,
+                "portfolio_pnl": portfolio["total_weighted_pnl"],
+                "circuit_breaker": portfolio["circuit_breaker"],
+                "positions_summary": portfolio["positions_summary"],
+                "decision": decision,
+                "psychology": psychology,
+                "seykota_check": seykota_check,
+            })
+        print(f"\n  ✅ Journal entry saved to {TRADE_JOURNAL_CSV}")
+    except OSError as e:
+        print(f"\n  ❌ Failed to save journal entry: {e}")
+
+    print()
 
 
 # ─── CLI ───────────────────────────────────────────────────────
@@ -349,6 +529,7 @@ Examples:
   python3 run_tracker.py --update geo=escalation ttf=2
   python3 run_tracker.py --update hormuz=closed
   python3 run_tracker.py --save --json      # Save + JSON output
+  python3 run_tracker.py --journal          # Add weekly journal entry
 
 Manual input shortcuts:
   geo     → geopolitical (de-escalation/ceasefire/stable/tensions/escalation)
@@ -365,6 +546,8 @@ Manual input shortcuts:
                         help="Live monitor mode (default: 120 min refresh)")
     parser.add_argument("--update", nargs="+", metavar="KEY=VAL",
                         help="Update manual inputs (e.g., geo=escalation ttf=2)")
+    parser.add_argument("--journal", action="store_true",
+                        help="Add weekly journal entry (auto-fills data, prompts for reflections)")
 
     args = parser.parse_args()
 
@@ -375,7 +558,9 @@ Manual input shortcuts:
         datefmt="%H:%M:%S",
     )
 
-    if args.update:
+    if args.journal:
+        run_journal()
+    elif args.update:
         handle_updates(args.update)
         print()
         # After updating, run a fresh report

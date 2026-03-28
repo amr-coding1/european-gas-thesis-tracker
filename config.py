@@ -193,6 +193,7 @@ REPORTS_DIR = os.path.join(BASE_DIR, "reports")
 HISTORICAL_CSV = os.path.join(DATA_DIR, "storage_history.csv")
 THESIS_LOG = os.path.join(DATA_DIR, "thesis_scores.csv")
 MANUAL_INPUTS_FILE = os.path.join(DATA_DIR, "manual_inputs.json")
+TRADE_JOURNAL_CSV = os.path.join(DATA_DIR, "trade_journal.csv")
 
 # Ensure directories exist
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -200,5 +201,17 @@ os.makedirs(REPORTS_DIR, exist_ok=True)
 
 # === Storage Mandate ===
 STORAGE_MANDATE_PCT = 90
-STORAGE_MANDATE_DEADLINE_MONTH = 11  # November
+STORAGE_MANDATE_RECOMMENDED = 80    # EU commissioner recommendation
+STORAGE_MANDATE_FLOOR = 70          # Minimum with full flexibility
+STORAGE_MANDATE_DEADLINE_MONTH = 12  # December (extended from Nov by 2025 amendment)
 STORAGE_MANDATE_DEADLINE_DAY = 1
+
+# === Circuit Breaker Thresholds (Portfolio P&L) ===
+CIRCUIT_BREAKER_THRESHOLDS = {
+    "yellow": -5.0,   # Pause new positions for 48h
+    "orange": -10.0,  # Cut all positions by 50%
+    "red": -15.0,     # Close everything, full reassessment
+}
+
+# === Valid Geopolitical Levels ===
+VALID_GEO_LEVELS = ["de-escalation", "ceasefire", "stable", "tensions", "escalation"]
